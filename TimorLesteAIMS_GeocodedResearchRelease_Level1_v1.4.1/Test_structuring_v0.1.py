@@ -26,7 +26,7 @@ address = os.getcwd()
 oldCSV = pd.read_csv(address+'//data//level_1a.csv')
 
 # set up the list of column title
-listCol = ['latitude', 'longitude', 'donors_iso3']
+# listCol = ['latitude', 'longitude', 'donors_iso3']
 
 # since repeatly use pandas.append() to add a row is a performance hit
 # As suggested, I will insert row content as a dictionary to a list
@@ -95,7 +95,7 @@ import shapely.geometry
 from scipy.spatial import Voronoi
 
 # get the numpy array of latitude and longitude
-arr_lat_lon = cleaned_data[:, ['latitude', 'longitude']].values
+arr_lat_lon = cleaned_data.loc[:, ['latitude', 'longitude']].values
 
 #Voronoi
 vor = Voronoi(arr_lat_lon)
@@ -110,11 +110,24 @@ lines = [
 import fiona
 import shapely.ops
 
+# get a list of polygons of voronoi tesellation
 areas = list(shapely.ops.polygonize(lines))
 
 # pseudo code :
 # Using fiona.collection to convert polygon to shapefile
 # when assigning attribute to polygon
+    # convert point records into multipoint
+        #load coordinates into multipoints object
+mtpoints = shapely.geometry.MultiPoint(arr_lat_lon)
+list_points = list(mtpoints.geoms)
+    # use list(points.geoms) or list(points) to access each point in MultiPoint object
 # use select by location services provided by shapely to find the point within one specific polygon
-# find copy the attribute of donors to it.
+    # shapely does not have select by location, use Point.within(), Polygon.contain() instead to judge and loop if there
+    # (continue from above) is point within a polygon and which point it is.
+for polygon in areas:
+    for point in list_points:
+        if point.within(polygon):
+            # do the things below
+# find the record within pandas.dataframe and copy the attribute of donors to it.
+    # find a way to update the schema of
 # finish the process of conversion of polygon.
