@@ -87,5 +87,34 @@ while len(oldCSV) > 0:
 
 # create the dataframe with all rows of information about positions
 cleaned_data = pd.DataFrame(list_rows)
-cleaned_data.to_csv('cleaned_Donors_record.csv', encoding='utf-8')
+CSVfile_name = 'cleaned_Donors_record.csv'
+cleaned_data.to_csv(CSVfile_name, encoding='utf-8')
+print ('information has been aggregated to' + CSVfile_name)
 
+import shapely.geometry
+from scipy.spatial import Voronoi
+
+# get the numpy array of latitude and longitude
+arr_lat_lon = cleaned_data[:, ['latitude', 'longitude']].values
+
+#Voronoi
+vor = Voronoi(arr_lat_lon)
+
+#convert it to line objects
+lines = [
+    shapely.geometry.LineString(vor.vertices[line])
+    for line in vor.ridge_vertice
+    if -1 not in line
+]
+
+import fiona
+import shapely.ops
+
+areas = list(shapely.ops.polygonize(lines))
+
+# pseudo code :
+# Using fiona.collection to convert polygon to shapefile
+# when assigning attribute to polygon
+# use select by location services provided by shapely to find the point within one specific polygon
+# find copy the attribute of donors to it.
+# finish the process of conversion of polygon.
