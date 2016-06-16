@@ -2,6 +2,11 @@
 import pandas as pd
 import numpy as np
 import os
+from shapely.geometry import LineString, MultiPoint, mapping
+from scipy.spatial import Voronoi
+import fiona
+from fiona.crs import from_epsg
+import shapely.ops
 
 # function 1: combineTwolist(l1,l2)
 # purpose: to combine all elements in the latter list into the first list while no same element will be added.
@@ -89,10 +94,7 @@ while len(oldCSV) > 0:
 cleaned_data = pd.DataFrame(list_rows)
 CSVfile_name = 'cleaned_Donors_record.csv'
 cleaned_data.to_csv(CSVfile_name, encoding='utf-8')
-print ('information has been aggregated to' + CSVfile_name)
-
-import shapely.geometry
-from scipy.spatial import Voronoi
+print ('information has been aggregated to ' + CSVfile_name)
 
 # get the numpy array of latitude and longitude
 arr_lat_lon = cleaned_data.loc[:, ['latitude', 'longitude']].values
@@ -102,13 +104,10 @@ vor = Voronoi(arr_lat_lon)
 
 #convert it to line objects
 lines = [
-    shapely.geometry.LineString(vor.vertices[line])
-    for line in vor.ridge_vertice
+    LineString(vor.vertices[line])
+    for line in vor.ridge_vertices
     if -1 not in line
 ]
-
-import fiona
-import shapely.ops
 
 # get a list of polygons of voronoi tesellation
 areas = list(shapely.ops.polygonize(lines))
@@ -118,16 +117,35 @@ areas = list(shapely.ops.polygonize(lines))
 # when assigning attribute to polygon
     # convert point records into multipoint
         #load coordinates into multipoints object
-mtpoints = shapely.geometry.MultiPoint(arr_lat_lon)
+mtpoints = MultiPoint(arr_lat_lon)
 list_points = list(mtpoints.geoms)
     # use list(points.geoms) or list(points) to access each point in MultiPoint object
 # use select by location services provided by shapely to find the point within one specific polygon
     # shapely does not have select by location, use Point.within(), Polygon.contain() instead to judge and loop if there
     # (continue from above) is point within a polygon and which point it is.
-for polygon in areas:
-    for point in list_points:
-        if point.within(polygon):
+outSchema = {'geometry':'Polygon', 'properties':{'donors_iso3':'str'}}
+crs = from_epsg(4326)
+# to extend schema in the future, add this:
+# outSchema['properties']['a field name you want'] = 'the type of field values shoule be'
+# since  outSchema['propertiies'] is essentially a dictionary
+
+with fiona.collection('TEST1.shp','w','ESRI Shapefile', outSchema,crs) as output:
+    for polygon in areas:
+        attribute_each_polygon = {}
+        for point in list_points:
+            if point.within(polygon):
+                is_same_lat = cleaned_data.latitude == point.x
+                is_same_lon = cleaned_data.longitude == point.y
+                # find the record within pandas.dataframe and copy the attribute of donors to it
+                attribute_each_polygon = {'donors_iso3': cleaned_data[is_same_lat & is_same_lon].head(1).donors_iso3}
+                break
+        output.write({
+            'properties': attribute_each_polygon,
+            'geometry': mapping(polygon)
+            })
+
+
             # do the things below
-# find the record within pandas.dataframe and copy the attribute of donors to it.
+
     # find a way to update the schema of
 # finish the process of conversion of polygon.
