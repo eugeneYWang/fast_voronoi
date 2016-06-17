@@ -97,7 +97,7 @@ cleaned_data.to_csv(CSVfile_name, encoding='utf-8')
 print ('information has been aggregated to ' + CSVfile_name)
 
 # get the numpy array of latitude and longitude
-arr_lat_lon = cleaned_data.loc[:, ['latitude', 'longitude']].values
+arr_lat_lon = cleaned_data.loc[:, ['longitude', 'latitude']].values
 
 #Voronoi
 vor = Voronoi(arr_lat_lon)
@@ -134,10 +134,11 @@ with fiona.collection('TEST1.shp','w','ESRI Shapefile', outSchema,crs) as output
         attribute_each_polygon = {}
         for point in list_points:
             if point.within(polygon):
-                is_same_lat = cleaned_data.latitude == point.x
-                is_same_lon = cleaned_data.longitude == point.y
+                is_same_lat = cleaned_data.latitude == point.y
+                is_same_lon = cleaned_data.longitude == point.x
                 # find the record within pandas.dataframe and copy the attribute of donors to it
-                attribute_each_polygon = {'donors_iso3': cleaned_data[is_same_lat & is_same_lon].head(1).donors_iso3}
+                donor = str(cleaned_data[is_same_lat & is_same_lon].head(1).donors_iso3.values[0])
+                attribute_each_polygon = {'donors_iso3': donor}
                 break
         output.write({
             'properties': attribute_each_polygon,
