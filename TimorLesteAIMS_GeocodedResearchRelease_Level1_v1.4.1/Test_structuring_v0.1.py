@@ -109,41 +109,65 @@ lines = [
     if -1 not in line
 ]
 
+# lines = [
+#     LineString(vor.vertices[line])
+#     for line in vor.ridge_vertices
+# ]
+
+# lines = []
+# for line in vor.ridge_vertices:
+#     if -1 not in line:
+#         lines.append(LineString(vor.vertices[line]))
+
+# get vertices points outside those bounded polygons
+# make a contex hull analysis
+# append line strings of contex hull to lines list.
+# do the polygonize again with the new linestring
+
 # get a list of polygons of voronoi tesellation
 areas = list(shapely.ops.polygonize(lines))
 
 # pseudo code :
-# Using fiona.collection to convert polygon to shapefile
-# when assigning attribute to polygon
-    # convert point records into multipoint
-        #load coordinates into multipoints object
+
+# These codes below try to assign attribute to polygon
+
+# convert point records into multipoint
+# load coordinates into multipoints object
 mtpoints = MultiPoint(arr_lat_lon)
+
+# use list(points.geoms) or list(points) to access each point in MultiPoint object
 list_points = list(mtpoints.geoms)
-    # use list(points.geoms) or list(points) to access each point in MultiPoint object
-# use select by location services provided by shapely to find the point within one specific polygon
-    # shapely does not have select by location, use Point.within(), Polygon.contain() instead to judge and loop if there
-    # (continue from above) is point within a polygon and which point it is.
+
+# create a schema for ESRI shapefile
 outSchema = {'geometry':'Polygon', 'properties':{'donors_iso3':'str'}}
+# use WGS 84 , longlat , the kind of global use of Coordinate Reference System
 crs = from_epsg(4326)
+
 # to extend schema in the future, add this:
 # outSchema['properties']['a field name you want'] = 'the type of field values shoule be'
 # since  outSchema['propertiies'] is essentially a dictionary
 
+# Using fiona.collection to convert polygon to shapefile
 with fiona.collection('TEST1.shp','w','ESRI Shapefile', outSchema,crs) as output:
     for polygon in areas:
         attribute_each_polygon = {}
         for point in list_points:
+            # use Point.within() or Polygon.contain() provided by shapely to find the point within one specific polygon
+            # to see if a point within a polygon and which point it is.
             if point.within(polygon):
                 is_same_lat = cleaned_data.latitude == point.y
                 is_same_lon = cleaned_data.longitude == point.x
                 # find the record within pandas.dataframe and copy the attribute of donors to it
                 donor = str(cleaned_data[is_same_lat & is_same_lon].head(1).donors_iso3.values[0])
                 attribute_each_polygon = {'donors_iso3': donor}
+                output.write({
+                    'properties': attribute_each_polygon,
+                    'geometry': mapping(polygon)
+                })
                 break
-        output.write({
-            'properties': attribute_each_polygon,
-            'geometry': mapping(polygon)
-            })
+            else:
+                attribute_each_polygon = {'donors_iso3':''}
+
 
 
             # do the things below
