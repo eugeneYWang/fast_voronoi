@@ -71,6 +71,7 @@ while len(oldCSV) > 0:
     for e in set_ISO3:
         temp_list_donor = str(e).split('|')
         list_donor = combineTwoList(list_donor, temp_list_donor)
+    list_donor.sort()
 
     # put those unique elements into a string
     ii = 0
