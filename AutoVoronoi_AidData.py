@@ -25,10 +25,10 @@ def aggregate_lv1_by_location(input_df, setting_csv_address = 'default', filter_
 
     # read setting file to get a list of fields needed.
     if setting_csv_address == 'default':
-        list_fields = read_setting('default_setting_voronoi.csv')
+        df_csv = read_setting('default_setting_voronoi.csv')
     else:
         try:
-            list_fields = read_setting(setting_csv_address)
+            df_csv = read_setting(setting_csv_address)
         except:
             print 'The setting file has an incorrect address or incorrect format'
 
@@ -36,7 +36,10 @@ def aggregate_lv1_by_location(input_df, setting_csv_address = 'default', filter_
     filtered_subset = filter_dataframe(input_df, filter_dict)
 
     # get dataframe with only the fields listed in the setting file
-    list
+    list_field = []
+    for i in df_csv:
+        list_field.append(i)
+    filtered_subset = filtered_subset.loc[:, list_field]
 
     comparing_index = 0
     count_total = len(filtered_subset)
