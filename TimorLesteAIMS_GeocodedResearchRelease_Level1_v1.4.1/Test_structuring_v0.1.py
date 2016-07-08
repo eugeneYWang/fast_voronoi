@@ -63,9 +63,12 @@ while len(oldCSV) > 0:
 
     # get dataframe of overlaping points
     subset_overlapping = oldCSV[is_lat & is_lon]
+
+    #set a single field to list
     set_ISO3 = set(subset_overlapping.donors_iso3.tolist())
     str_donor = ''
 
+    # get a list of unique values on a single field
     # get a list of unique values of ISO3 code
     list_donor = []
     for e in set_ISO3:

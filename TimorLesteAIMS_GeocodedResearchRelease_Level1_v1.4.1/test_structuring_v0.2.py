@@ -72,6 +72,11 @@ with fiona.open(bdSHP, 'r') as layer_boundary:
         # loop each polygon in boundary shapefile
             # loop every polygon in voronoi result
             attribute_each_polygon = {}
+        '''
+        filter(bbox=None)
+        Returns an iterator over records, but filtered by a test for spatial intersection with the provided bbox,
+         a (minx, miny, maxx, maxy) tuple.
+        '''
             for record_boundary in layer_boundary.filter():
                 for record_polygon in layer_voronoi.filter():
                     # do intersection
